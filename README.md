@@ -2,11 +2,11 @@
 
 Collection of util SoC components used through different personal RTL projects.
 
-`axi_crossbar_wrapper.sv` - Wrapper around [axi_crossbar](verilog-axi/axi_crossbar.v) from **verilog-axi**' using SV structs from [amba_sv_structs](amba_sv_structs);
+`axi_crossbar_wrapper.sv` - Wrapper around [axi_crossbar](verilog-axi/rtl/axi_crossbar.v) from **verilog-axi**' using SV structs from [amba_sv_structs](amba_sv_structs);
 
-`axi_interconnect_wrapper.sv` - Wrapper around [axi_interconnect](verilog-axi/axi_interconnect.v) from **verilog-axi** using SV structs from [amba_sv_structs](amba_sv_structs);
+`axi_interconnect_wrapper.sv` - Wrapper around [axi_interconnect](verilog-axi/rtl/axi_interconnect.v) from **verilog-axi** using SV structs from [amba_sv_structs](amba_sv_structs);
 
-`axi_mem_wrapper.sv` - Wrapper around [axi_ram](verilog-axi/axi_ram_wo_reset.sv) from **verilog-axi** with the additional change of set initial value;
+`axi_mem_wrapper.sv` - Wrapper around [axi_ram](verilog-axi/rtl/axi_ram_wo_reset.sv) from **verilog-axi** with the additional change of set initial value;
 
 `axi_rom_wrapper.sv` - Wrapper for ROM memory module generated through the python script;
 
