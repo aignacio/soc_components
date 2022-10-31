@@ -9,11 +9,11 @@ module axi_crossbar_wrapper
   import amba_axi_pkg::*;
   import amba_ahb_pkg::*;
 #(
-  parameter int N_MASTERS     = 1,
-  parameter int N_SLAVES      = 1,
-  parameter int M_BASE_ADDR   = 0,
-  parameter int AXI_TID_WIDTH = 8, // Slave ARID/AWID/BID/RID is bigger by clog2 num of masters
-  parameter int M_ADDR_WIDTH  = 0
+  parameter N_MASTERS     = 1,
+  parameter N_SLAVES      = 1,
+  parameter M_BASE_ADDR   = 0,
+  parameter AXI_TID_WIDTH = 8, // Slave ARID/AWID/BID/RID is bigger by clog2 num of masters
+  parameter M_ADDR_WIDTH  = 0
 )(
   input                                 clk,
   input                                 rst,
