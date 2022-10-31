@@ -1,0 +1,16 @@
+// For performance use line below
+// -O3 --x-assign fast --x-initial fast --noassert
+-Wno-UNOPTFLAT
+-Wno-TIMESCALEMOD
+//--coverage
+--exe
+--threads 24
+--trace
+--trace-depth			10000
+--trace-structs
+--trace-fst
+--trace-max-array	10000
+--trace-max-width 10000
+--cc
+//--hierarchical
+verilator_config.vlt
