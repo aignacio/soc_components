@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-module cdc_async_fifo # (
+module async_gp_fifo # (
   parameter int SLOTS = 2,
   parameter int WIDTH = 8
 ) (
