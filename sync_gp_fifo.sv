@@ -27,7 +27,8 @@ module sync_gp_fifo # (
   parameter int WIDTH = 8
 )(
   input                                       clk,
-  input                                       arst,
+  input                                       rst,
+  input                                       clear_i,
   input                                       write_i,
   input                                       read_i,
   input         [WIDTH-1:0]                   data_i,
@@ -35,16 +36,18 @@ module sync_gp_fifo # (
   output  logic                               error_o,
   output  logic                               full_o,
   output  logic                               empty_o,
-  output  logic [$clog2(SLOTS>1?SLOTS:2):0]   ocup_o
+  output  logic [$clog2(SLOTS>1?SLOTS:2):0]   ocup_o,
+  output  logic [$clog2(SLOTS>1?SLOTS:2):0]   free_o
 );
   `define MSB_SLOT  $clog2(SLOTS>1?SLOTS:2)
+  typedef logic [$clog2(SLOTS>1?SLOTS:2):0] msb_t;
 
-  logic [SLOTS-1:0] [WIDTH-1:0]     fifo_ff;
-  logic [`MSB_SLOT:0] write_ptr_ff;
-  logic [`MSB_SLOT:0] read_ptr_ff;
-  logic [`MSB_SLOT:0] next_write_ptr;
-  logic [`MSB_SLOT:0] next_read_ptr;
-  logic [`MSB_SLOT:0] fifo_ocup;
+  logic [SLOTS-1:0] [WIDTH-1:0] fifo_ff;
+  msb_t                         write_ptr_ff;
+  msb_t                         read_ptr_ff;
+  msb_t                         next_write_ptr;
+  msb_t                         next_read_ptr;
+  msb_t                         fifo_ocup;
 
   always_comb begin
     next_read_ptr = read_ptr_ff;
@@ -69,25 +72,32 @@ module sync_gp_fifo # (
 
     error_o = (write_i && full_o) || (read_i && empty_o);
     fifo_ocup = write_ptr_ff - read_ptr_ff;
+    free_o = msb_t'(SLOTS) - fifo_ocup;
     ocup_o = fifo_ocup;
   end
 
-  always_ff @ (posedge clk or posedge arst) begin
-    if (arst) begin
+  always_ff @ (posedge clk) begin
+    if (rst) begin
       write_ptr_ff <= '0;
-      read_ptr_ff <= '0;
-      fifo_ff <= '0;
+      read_ptr_ff  <= '0;
     end
     else begin
-      write_ptr_ff <= next_write_ptr;
-      read_ptr_ff <= next_read_ptr;
-      if (write_i && ~full_o)
-        if (SLOTS == 1) begin
-          fifo_ff[0] <= data_i;
+      if (clear_i) begin
+        write_ptr_ff <= '0;
+        read_ptr_ff  <= '0;
+      end
+      else begin
+        write_ptr_ff <= next_write_ptr;
+        read_ptr_ff <= next_read_ptr;
+        if (write_i && ~full_o) begin
+          if (SLOTS == 1) begin
+            fifo_ff[0] <= data_i;
+          end
+          else begin
+            fifo_ff[write_ptr_ff[`MSB_SLOT-1:0]] <= data_i;
+          end
         end
-        else begin
-          fifo_ff[write_ptr_ff[`MSB_SLOT-1:0]] <= data_i;
-        end
+      end
     end
   end
 
