@@ -66,21 +66,24 @@ module axi_irq_ctrl
   logic [IRQ_N_WIDTH-1:0] fifo_rd_data;
   logic [IRQ_N_WIDTH-1:0] fifo_wr_data;
   logic [31:0]            irq_trigger;
+  logic [31:0]            sampled;
 
   for (genvar i=0; i<32; i++) begin
     irq_trigger #(
-      .IRQ_TYPE (TYPE_OF_IRQ[i])
+      .IRQ_TYPE  (TYPE_OF_IRQ[i])
     ) u_irq_trigger (
-      .clk      (clk),
-      .rst      (rst),
-      .irq_i    (irq_i[i]),
-      .trigger_o(irq_trigger[i])
+      .clk       (clk),
+      .rst       (rst),
+      .irq_i     (irq_i[i]),
+      .sampled_i (sampled[i]),
+      .trigger_o (irq_trigger[i])
     );
   end
 
   always_comb begin
     wr_fifo = 1'b0;
     fifo_wr_data = '0;
+    sampled = '0;
 
     if (|irq_trigger) begin
       for (int i=0; i<32; i++) begin
@@ -88,6 +91,7 @@ module axi_irq_ctrl
           /* verilator lint_off WIDTH */
           wr_fifo = 1'b1;
           fifo_wr_data = i;
+          sampled[i] = 1'b1;
           /* verilator lint_on WIDTH */
           break;
         end
@@ -238,13 +242,20 @@ module irq_trigger #(
   input        clk,
   input        rst,
   input        irq_i,
+  input        sampled_i,
   output logic trigger_o
 );
   logic trigger_ff, next_trigger;
   logic irq_st_ff, next_irq;
 
   always_comb begin
-    next_trigger = 1'b0;
+    if (trigger_ff) begin
+      next_trigger = sampled_i ? 1'b0 : 1'b1;
+    end
+    else begin
+      next_trigger = 1'b0;
+    end
+
     next_irq = irq_i;
 
     if (IRQ_TYPE == 0) begin
