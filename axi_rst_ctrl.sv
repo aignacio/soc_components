@@ -40,6 +40,7 @@ module axi_rst_ctrl
   logic                         bvalid_ff,    next_bvalid;
   logic [RESET_PULSE_WIDTH-1:0] rst_ff,       next_rst;
   logic                         rst_dec_ff,   next_rst_dec;
+  logic                         rst_dec_b_ff, next_rst_dec_b;
   logic [31:0]                  rst_loading; // This reset loading is used by tb to change reset vector of the CPU during sims
 
 `ifdef SIMULATION
@@ -62,15 +63,16 @@ module axi_rst_ctrl
 
   /* verilator lint_off WIDTH */
   always_comb begin
-    next_rst_addr = rst_addr_ff;
-    next_wr_rst   = wr_rst_ff;
-    next_rd_rst   = rd_rst_ff;
-    axi_miso      = s_axi_miso_t'('0);
-    next_bvalid   = bvalid_ff;
-    rst_addr_o    = rst_addr_ff;
-    next_rst      = (rst_ff << 1);
-    rst_o         = |rst_ff;
-    next_rst_dec  = rst_dec_ff;
+    next_rst_addr  = rst_addr_ff;
+    next_wr_rst    = wr_rst_ff;
+    next_rd_rst    = rd_rst_ff;
+    axi_miso       = s_axi_miso_t'('0);
+    next_bvalid    = bvalid_ff;
+    rst_addr_o     = rst_addr_ff;
+    next_rst       = (rst_ff << 1);
+    rst_o          = |rst_ff;
+    next_rst_dec   = rst_dec_ff;
+    next_rst_dec_b = rst_dec_b_ff;
 
     axi_miso.awready = 1'b1;
     axi_miso.wready  = 1'b1;
@@ -105,12 +107,18 @@ module axi_rst_ctrl
     end
 
     if (axi_mosi.wvalid && rst_dec_ff) begin
-      next_rst_dec  = 1'b0;
-      next_bvalid   = 'b1;
+      next_rst_dec   = 1'b0;
+      next_bvalid    = 'b1;
+      next_rst_dec_b = 1'b1;
     end
 
     if (bvalid_ff) begin
       next_bvalid = axi_mosi.bready ? 'b0 : 'b1;
+
+      if (rst_dec_b_ff) begin
+        next_rst_dec_b = 1'b0;
+        next_rst       = 'd1;
+      end
     end
 
     if (axi_mosi.arvalid && ((axi_mosi.araddr[15:0]-BASE_ADDR[15:0]) == '0)) begin
@@ -143,12 +151,14 @@ module axi_rst_ctrl
 
   always_ff @ (posedge clk) begin
     if (rst) begin
-      rst_ff     <= 'd1;
-      rst_dec_ff <= 1'b0;
+      rst_ff       <= 'd1;
+      rst_dec_ff   <= 1'b0;
+      rst_dec_b_ff <= 1'b0;
     end
     else begin
-      rst_ff     <= next_rst;
-      rst_dec_ff <= next_rst_dec;
+      rst_ff       <= next_rst;
+      rst_dec_ff   <= next_rst_dec;
+      rst_dec_b_ff <= next_rst_dec_b;
     end
   end
 
