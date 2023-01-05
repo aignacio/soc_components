@@ -1,9 +1,9 @@
-[submodule "amba_sv_structs"]
-	path = amba_sv_structs
-	url = git@github.com:aignacio/amba_sv_structs.git
 [submodule "verilog-axi"]
 	path = verilog-axi
 	url = https://github.com/aignacio/verilog-axi
 [submodule "wbuart32"]
 	path = wbuart32
 	url = git@github.com:ZipCPU/wbuart32.git
+[submodule "bus_arch_sv_pkg"]
+	path = bus_arch_sv_pkg
+	url = git@github.com:aignacio/bus_arch_sv_pkg.git
