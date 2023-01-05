@@ -4,31 +4,43 @@
  * Author            : Anderson Ignacio da Silva (aignacio) <anderson@aignacio.com>
  * Date              : 13.03.2022
  * Last Modified Date: 13.04.2022
+ *
+ * CSRs:
+ *  __________________________________
+ * |_Address_|_AC_|___Description_____|
+ * |   0x00  | RW | Reset address val |
+ * |   0x10  | WO | Wr. buffer [SIM]  |
+ * |   0x20  | WO | Reset active out  |
+ * |_________|____|___________________|
  */
 module axi_rst_ctrl
   import amba_axi_pkg::*;
   import amba_ahb_pkg::*;
 #(
   parameter int RESET_VECTOR_ADDR = 32'h0,
-  parameter int BASE_ADDR         = 32'h0
+  parameter int BASE_ADDR         = 32'h0,
+  parameter int RESET_PULSE_WIDTH = 'd4
 )(
   input                 clk,
   input                 rst,
   input                 bootloader_i, // Active-high
   input   s_axi_mosi_t  axi_mosi,
   output  s_axi_miso_t  axi_miso,
-  output  logic [31:0]  rst_addr_o
+  output  logic [31:0]  rst_addr_o,
+  output  logic         rst_o         // Controllable output reset
 );
   s_axi_mosi_t  axi_mosi_int;
   s_axi_miso_t  axi_miso_int;
   axi_tid_t     rid_ff, next_rid;
   axi_tid_t     wid_ff, next_wid;
 
-  logic [31:0] rst_addr_ff, next_rst;
-  logic        wr_rst_ff,   next_wr_rst;
-  logic        rd_rst_ff,   next_rd_rst;
-  logic        bvalid_ff,   next_bvalid;
-  logic [31:0] rst_loading; // This reset loading is used by tb to change reset vector of the CPU during sims
+  logic [31:0]                  rst_addr_ff,  next_rst_addr;
+  logic                         wr_rst_ff,    next_wr_rst;
+  logic                         rd_rst_ff,    next_rd_rst;
+  logic                         bvalid_ff,    next_bvalid;
+  logic [RESET_PULSE_WIDTH-1:0] rst_ff,       next_rst;
+  logic                         rst_dec_ff,   next_rst_dec;
+  logic [31:0]                  rst_loading; // This reset loading is used by tb to change reset vector of the CPU during sims
 
 `ifdef SIMULATION
   logic next_char, char_ff;
@@ -50,12 +62,15 @@ module axi_rst_ctrl
 
   /* verilator lint_off WIDTH */
   always_comb begin
-    next_rst    = rst_addr_ff;
-    next_wr_rst = wr_rst_ff;
-    next_rd_rst = rd_rst_ff;
-    axi_miso    = s_axi_miso_t'('0);
-    next_bvalid = bvalid_ff;
-    rst_addr_o  = rst_addr_ff;
+    next_rst_addr = rst_addr_ff;
+    next_wr_rst   = wr_rst_ff;
+    next_rd_rst   = rd_rst_ff;
+    axi_miso      = s_axi_miso_t'('0);
+    next_bvalid   = bvalid_ff;
+    rst_addr_o    = rst_addr_ff;
+    next_rst      = (rst_ff << 1);
+    rst_o         = |rst_ff;
+    next_rst_dec  = rst_dec_ff;
 
     axi_miso.awready = 1'b1;
     axi_miso.wready  = 1'b1;
@@ -79,10 +94,19 @@ module axi_rst_ctrl
     end
   `endif
 
+    if (axi_mosi.awvalid && ((axi_mosi.awaddr[15:0]-BASE_ADDR[15:0]) == 'h0020)) begin
+      next_rst_dec = 'd1;
+    end
+
     if (axi_mosi.wvalid && wr_rst_ff) begin
-      next_wr_rst = 1'b0;
-      next_rst    = axi_mosi.wdata;
-      next_bvalid = 'b1;
+      next_wr_rst   = 1'b0;
+      next_rst_addr = axi_mosi.wdata;
+      next_bvalid   = 'b1;
+    end
+
+    if (axi_mosi.wvalid && rst_dec_ff) begin
+      next_rst_dec  = 1'b0;
+      next_bvalid   = 'b1;
     end
 
     if (bvalid_ff) begin
@@ -119,17 +143,19 @@ module axi_rst_ctrl
 
   always_ff @ (posedge clk) begin
     if (rst) begin
-      rid_ff <= '0;
-      wid_ff <= '0;
+      rst_ff     <= 'd1;
+      rst_dec_ff <= 1'b0;
     end
     else begin
-      rid_ff <= next_rid;
-      wid_ff <= next_wid;
+      rst_ff     <= next_rst;
+      rst_dec_ff <= next_rst_dec;
     end
   end
 
   always_ff @(posedge clk) begin
     if (rst) begin
+      rid_ff      <= '0;
+      wid_ff      <= '0;
       wr_rst_ff   <= '0;
       bvalid_ff   <= '0;
       rd_rst_ff   <= '0;
@@ -138,6 +164,8 @@ module axi_rst_ctrl
     `endif
     end
     else begin
+      rid_ff      <= next_rid;
+      wid_ff      <= next_wid;
       wr_rst_ff   <= next_wr_rst;
       bvalid_ff   <= next_bvalid;
       rd_rst_ff   <= next_rd_rst;
@@ -155,7 +183,7 @@ module axi_rst_ctrl
     `ifdef SIMULATION
       rst_addr_ff <= rst_loading;
     `else
-      rst_addr_ff <= next_rst;
+      rst_addr_ff <= next_rst_addr;
     `endif
     end
   end
