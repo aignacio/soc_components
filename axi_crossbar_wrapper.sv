@@ -3,7 +3,7 @@
  * License           : MIT license <Check LICENSE>
  * Author            : Anderson Ignacio da Silva (aignacio) <anderson@aignacio.com>
  * Date              : 30.10.2022
- * Last Modified Date: 30.10.2022
+ * Last Modified Date: 11.02.2023
  */
 module axi_crossbar_wrapper
   import amba_axi_pkg::*;
@@ -12,8 +12,10 @@ module axi_crossbar_wrapper
   parameter N_MASTERS     = 1,
   parameter N_SLAVES      = 1,
   parameter M_BASE_ADDR   = 0,
+  parameter M_ADDR_WIDTH  = 0,
   parameter AXI_TID_WIDTH = 8, // Slave ARID/AWID/BID/RID is bigger by clog2 num of masters
-  parameter M_ADDR_WIDTH  = 0
+  parameter ADDR_WIDTH    = 32,
+  parameter DATA_WIDTH    = 32
 )(
   input                                 clk,
   input                                 rst,
@@ -113,8 +115,8 @@ module axi_crossbar_wrapper
 
   localparam ID_WIDTH     = AXI_TID_WIDTH-$clog2(N_MASTERS);
   localparam SID_WIDTH    = AXI_TID_WIDTH;
-  localparam DATA_WIDTH   = 32;
-  localparam ADDR_WIDTH   = 32;
+  //localparam DATA_WIDTH   = 32;
+  //localparam ADDR_WIDTH   = 32;
   localparam AWUSER_WIDTH = 1;
   localparam ARUSER_WIDTH = 1;
   localparam WUSER_WIDTH  = 1;
@@ -223,7 +225,7 @@ module axi_crossbar_wrapper
     // Width of ID signal
     .S_ID_WIDTH   (ID_WIDTH),
     // Width of address bus in bits
-    .ADDR_WIDTH   (32),
+    .ADDR_WIDTH   (ADDR_WIDTH),
     // Master interface base addresses
     // M_COUNT concatenated fields of M_REGIONS concatenated fields of ADDR_WIDTH bits
     // set to zero for default addressing based on M_ADDR_WIDTH
