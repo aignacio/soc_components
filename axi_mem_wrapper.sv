@@ -80,7 +80,15 @@ module axi_mem_wrapper
   localparam NUM_WORDS = (MEM_KB*1024)/4;
   logic [NUM_WORDS-1:0][31:0] mem_loading;
 
-  initial begin
+  //initial begin
+    //if (rst) begin
+      //for (int  i=0; i<NUM_WORDS; i++) begin
+        //u_ram.mem[i] = mem_loading[i];
+      //end
+    //end
+  //end
+
+  always_ff @ (posedge clk or posedge rst) begin
     if (rst) begin
       for (int  i=0; i<NUM_WORDS; i++) begin
         u_ram.mem[i] = mem_loading[i];
