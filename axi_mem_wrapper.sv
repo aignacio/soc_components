@@ -88,6 +88,7 @@ module axi_mem_wrapper
     //end
   //end
 
+  // synthesis translate_off
   always_ff @ (posedge clk or posedge rst) begin
     if (rst) begin
       for (int  i=0; i<NUM_WORDS; i++) begin
@@ -95,5 +96,6 @@ module axi_mem_wrapper
       end
     end
   end
+  // synthesis translate_on
   /* verilator lint_on WIDTH */
 endmodule
