@@ -66,6 +66,8 @@ module async_gp_fifo # (
                                         // we only use it to gen the full
                                         // flag, and crossing gray encoding
                                         // it's more stable than bin encoding
+  ptr_t  r_rd_gry_ptr_ff;
+  ptr_t  w_wr_gry_ptr_ff;
 
   ptr_t  r_rd_bin_ptr_ff, next_r_rd_bin_ptr;
   ptr_t  r_wr_gry_ptr_ff; // We only bring to rd domain
@@ -113,13 +115,15 @@ module async_gp_fifo # (
       w_wr_bin_ptr_ff  <= ptr_t'(0);
       META_w_rd_gry_ff <= ptr_t'(0);
       w_rd_gry_ptr_ff  <= ptr_t'(0);
+      w_wr_gry_ptr_ff  <= ptr_t'(0);
       //array_fifo_ff    <= '0; // --> Let's make it "low power"
     end
     else begin
       w_wr_bin_ptr_ff  <= next_w_wr_bin_ptr;
+      w_wr_gry_ptr_ff  <= bin_to_gray(w_wr_bin_ptr_ff);
       // 2FF Synchronizer:
       // Bring RD ptr to WR domain
-      META_w_rd_gry_ff <= bin_to_gray(r_rd_bin_ptr_ff);
+      META_w_rd_gry_ff <= r_rd_gry_ptr_ff;
       w_rd_gry_ptr_ff  <= META_w_rd_gry_ff;
 
       if (wr_en_i && ~wr_full_o) begin
@@ -148,12 +152,14 @@ module async_gp_fifo # (
       r_rd_bin_ptr_ff  <= ptr_t'(0);
       META_r_wr_gry_ff <= ptr_t'(0);
       r_wr_gry_ptr_ff  <= ptr_t'(0);
+      r_rd_gry_ptr_ff  <= ptr_t'(0);
     end
     else begin
       r_rd_bin_ptr_ff  <= next_r_rd_bin_ptr;
+      r_rd_gry_ptr_ff  <= bin_to_gray(r_rd_bin_ptr_ff);
       // 2FF Synchronizer:
       // Bring RD ptr to WR domain
-      META_r_wr_gry_ff <= bin_to_gray(w_wr_bin_ptr_ff);
+      META_r_wr_gry_ff <= w_wr_gry_ptr_ff;
       r_wr_gry_ptr_ff  <= META_r_wr_gry_ff;
     end
   end
